@@ -1,0 +1,38 @@
+{
+    "files.exclude": {
+        "_ignore_*": true,
+        "_ignore_*.*": true,
+        ".ignore_*": true,
+        ".ignore_*.*": true,
+        ".github": true,
+        ".vscode": true,
+        ".husky": true,
+        ".huskyrc": true,
+        ".prettierrc*": true,
+        ".scannerwork": true,
+        ".lintstagedrc": true,
+        ".eslintrc*": true,
+        ".tools": true,
+        ".prettierignore": true,
+        ".dockerignore": true,
+        ".gitignore": true,
+        ".eslintignore": true,
+        "coverage": true,
+        "node_modules": true,
+        "dist": true,
+        "package-lock.json": true
+    },
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/*/**": true,
+        "/coverage/**": true,
+        "/.scannerwork/**": true,
+        ".husky": true
+    },
+    "editor.tabSize": 4,
+    "editor.formatOnSave": false,
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+}

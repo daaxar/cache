@@ -1,0 +1,101 @@
+name: DEVELOP
+
+on:
+  push:
+    branches: [ develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    name: Build and test
+
+    strategy:
+      matrix:
+        node-version: [12.x, 14.x, 16.x, 17.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Upgrade to npm@8
+      run: npm install -g npm@8
+
+    - name: Install dependencies 
+      run: npm ci
+          
+    - name: Build project
+      run: npm run build --if-present
+          
+    - name: Run tests
+      run: npm test
+
+  increment-version:
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    name: Increment version and push changes
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@daaxar'
+
+    - name: Use npm v8
+      run: npm install -g npm@8
+  
+    - name: Increment version
+      run: npm version --no-git-tag-version prerelease --preid beta
+
+    - name: Config GIT user
+      run: |
+          git config --local user.name 'an employee of the 7G sector'
+          git config --local user.email ''
+
+    - name: Commit and push new version
+      run: |
+          git add -A -- package.json && git commit -m "New version"
+          git push
+
+  publish:
+    runs-on: ubuntu-latest
+
+    needs: [build, increment-version]
+
+    name: Publish package
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@daaxar'
+
+    - name: Use npm v8
+      run: npm install -g npm@8
+
+    - name: Pull last changes
+      run: |
+          git fetch origin develop --unshallow
+          git pull origin develop
+
+    - name: Install dependencies 
+      run: npm ci
+
+    - name: Create pack
+      run: npm pack
+
+    - name: Publish package
+      run: npm publish --scope daaxar --tag beta
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
