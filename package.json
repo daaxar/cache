@@ -1,0 +1,34 @@
+{
+    "name": "@daaxar/cache",
+    "version": "0.1.1-beta.0",
+    "description": "Yet another decorator cache function",
+    "main": "index.js",
+    "files": [
+        "dist",
+        "src",
+        "LICENSE",
+        "README.md",
+        "package.json",
+        "index.js"
+    ],
+    "scripts": {
+        "test": "echo \"Warn: test are skipped\" && exit 0"
+    },
+    "keywords": [
+        "cache",
+        "decorator"
+    ],
+    "author": "github.com/daaxar",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/daaxar/cache.git"
+    },
+    "bugs": {
+        "url": "https://github.com/daaxar/cache/issues"
+    },
+    "homepage": "https://github.com/daaxar/cache#readme",
+    "devDependencies": {
+        "eslint-config-daaxar": "github:daaxar/eslint-config-daaxar"
+    },
+    "license": "MIT"
+}
