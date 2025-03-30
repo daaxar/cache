@@ -2,17 +2,33 @@
     "name": "@daaxar/cache",
     "version": "0.1.2-beta.0",
     "description": "Yet another decorator cache function",
-    "main": "index.js",
+    "main": "src/index.js",
     "files": [
         "dist",
         "src",
         "LICENSE",
         "README.md",
-        "package.json",
-        "index.js"
+        "package.json"
     ],
+    "engines": {
+        "node": "22.14.0",
+        "npm": "10.9.2"
+    },
     "scripts": {
-        "test": "echo \"Warn: test are skipped\" && exit 0"
+        "lint": "prettier . --ignore-unknown",
+        "lint:write": "npm run lint -- --write",
+        "test": "echo \"Warn: test are skipped\" && exit 0",
+        "nvm": "nvm use",
+        "prepare": "husky"
+    },
+    "devDependencies": {
+        "@commitlint/cli": "^19.7.1",
+        "@commitlint/config-conventional": "^19.7.1",
+        "husky": "^9.1.7",
+        "jest": "^29.7.0",
+        "lint-staged": "^15.5.0",
+        "prettier": "^3.5.3",
+        "rimraf": "^6.0.1"
     },
     "keywords": [
         "cache",
@@ -27,8 +43,5 @@
         "url": "https://github.com/daaxar/cache/issues"
     },
     "homepage": "https://github.com/daaxar/cache#readme",
-    "devDependencies": {
-        "eslint-config-daaxar": "github:daaxar/eslint-config-daaxar"
-    },
     "license": "MIT"
 }

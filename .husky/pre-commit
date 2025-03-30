@@ -1,5 +1,6 @@
 #!/bin/sh
-[ -s "$HOME/.nvm/nvm.sh" ] && \. "$HOME/.nvm/nvm.sh"
-. "$(dirname "$0")/_/husky.sh"
 
-npx lint-staged
+. "$HOME/.nvm/nvm.sh"
+nvm use
+
+lint-staged

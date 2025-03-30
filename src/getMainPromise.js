@@ -7,7 +7,7 @@ function getMainPromise(
     throwOnError,
     args,
     instanceExpiresAtValue,
-    expiresAtValue
+    expiresAtValue,
 ) {
     const folder = `${__dirname}/.cache`;
     const filename = `${folder}/${prefix || ''}${key}.json`;
@@ -46,7 +46,7 @@ function getMainPromise(
                                 JSON.stringify(json, null, 2),
                                 (errWrite) => {
                                     if (throwOnError) reject(errWrite);
-                                }
+                                },
                             );
                         } catch (writeError) {
                             if (throwOnError) reject(writeError);

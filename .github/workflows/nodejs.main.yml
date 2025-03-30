@@ -1,135 +1,135 @@
 name: MAIN
 
 on:
-  push:
-    branches: [ main ]
+    push:
+        branches: [main]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    name: Build and test
+        name: Build and test
 
-    strategy:
-      matrix:
-        node-version: [12.x, 14.x, 16.x, 17.x]
+        steps:
+            - name: Show pre-installed Node.js version
+              run: node --version
 
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
+            - uses: actions/checkout@v4
 
-    - name: Upgrade to npm@8
-      run: npm install -g npm@8
+            - name: Install Node.js via nvm using .nvmrc
+              shell: bash --login {0}
+              run: |
+                  export NVM_DIR="$HOME/.nvm"
+                  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                  nvm install --latest-npm --no-progress
+                  echo "$(dirname $(nvm which node))" >> $GITHUB_PATH
 
-    - name: Install dependencies 
-      run: npm ci
-          
-    - name: Build project
-      run: npm run build --if-present
-          
-    - name: Run tests
-      run: npm test
+            - name: Show newly installed Node.js version
+              run: node --version
 
-  increment-version:
-    runs-on: ubuntu-latest
+            - name: Install dependencies
+              run: npm ci
 
-    needs: build
+            - name: Build project
+              run: npm run build --if-present
 
-    name: Increment version and push changes
+            - name: Run tests
+              run: npm test
 
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: 16
-        registry-url: 'https://npm.pkg.github.com'
-        scope: '@daaxar'
+    increment-version:
+        runs-on: ubuntu-latest
 
-    - name: Use npm v8
-      run: npm install -g npm@8
-  
-    - name: Increment version
-      run: npm version --no-git-tag-version patch      
+        needs: build
+        name: Increment version and push changes
 
-    - name: Config GIT user
-      run: |
-          git config --local user.name 'an employee of the 7G sector'
-          git config --local user.email ''
+        steps:
+            - uses: actions/checkout@v4
 
-    - name: Commit and push new version
-      run: |
-          git add -A -- package.json && git commit -m "New version"
-          git push
+            - name: Install Node.js via nvm using .nvmrc
+              shell: bash --login {0}
+              run: |
+                  export NVM_DIR="$HOME/.nvm"
+                  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                  nvm install --latest-npm --no-progress
+                  echo "$(dirname $(nvm which node))" >> $GITHUB_PATH
 
-  publish:
-    runs-on: ubuntu-latest
+            - name: Show Node.js version
+              run: node --version
 
-    needs: [build, increment-version]
+            - name: Increment version (patch)
+              run: npm version --no-git-tag-version patch
 
-    name: Publish package
+            - name: Config GIT user
+              run: |
+                  git config --local user.name 'an employee of the 7G sector'
+                  git config --local user.email ''
 
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: 16
-        registry-url: 'https://npm.pkg.github.com'
-        scope: '@daaxar'
+            - name: Commit and push new version
+              run: |
+                  git add package.json
+                  git commit -m "New version"
+                  git push
 
-    - name: Use npm v8
-      run: npm install -g npm@8
+    publish:
+        runs-on: ubuntu-latest
+        needs: [build, increment-version]
+        name: Publish package
 
-    - name: Fetch last changes
-      run: |
-          git fetch origin main --unshallow
-          git pull origin main
+        steps:
+            - uses: actions/checkout@v4
 
-    - name: Install dependencies 
-      run: npm ci
+            - name: Install Node.js via nvm using .nvmrc
+              shell: bash --login {0}
+              run: |
+                  export NVM_DIR="$HOME/.nvm"
+                  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                  nvm install --latest-npm --no-progress
+                  echo "$(dirname $(nvm which node))" >> $GITHUB_PATH
 
-    - name: Create pack
-      run: npm pack
+            - name: Fetch last changes
+              run: |
+                  git fetch origin main --unshallow || true
+                  git pull origin main
 
-    - name: Publish package
-      run: npm publish --scope daaxar --tag latest
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Install dependencies
+              run: npm ci
 
-  merge-back:
-    runs-on: ubuntu-latest
+            - name: Create pack
+              run: npm pack
 
-    needs: [build, increment-version, publish]
+            - name: Publish package
+              run: npm publish --scope daaxar --tag latest
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    name: Merge back to develop
+    merge-back:
+        runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v2
+        needs: [build, increment-version, publish]
 
-    - name: Config GIT user
-      run: |
-          git config --local user.name 'an employee of the 7G sector'
-          git config --local user.email ''
+        name: Merge back to develop
 
-    - name: Fetch last main changes
-      run: |
-          git fetch --unshallow --tags origin develop main
-          git checkout main
-          git pull origin main
+        steps:
+            - uses: actions/checkout@v4
 
-    - name: Merge main into develop branch
-      run: |
-          git checkout develop
-          git pull origin develop
-          git merge --ff main -m "Auto-merge main back to develop"
+            - name: Config GIT user
+              run: |
+                  git config --local user.name 'an employee of the 7G sector'
+                  git config --local user.email ''
 
-    - name: Push changes
-      run: |
-          git push
-          git checkout main
+            - name: Fetch latest main and develop
+              run: |
+                  git fetch --unshallow --tags origin develop main || true
+                  git checkout main
+                  git pull origin main
 
+            - name: Merge main into develop branch
+              run: |
+                  git checkout develop
+                  git pull origin develop
+                  git merge --ff main -m "Auto-merge main back to develop"
 
+            - name: Push merged changes
+              run: |
+                  git push
+                  git checkout main

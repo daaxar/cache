@@ -31,7 +31,7 @@ const { filesystem } = require('../src/repository');
 const repository = filesystem({ folder: `${__dirname}/.cache` });
 
 const cache = Cache({
-    expiresAt: 2,   // Expire at 2 seconds. Default is 30 seconds
+    expiresAt: 2, // Expire at 2 seconds. Default is 30 seconds
     repository,
 });
 ```
