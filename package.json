@@ -43,5 +43,8 @@
         "url": "https://github.com/daaxar/cache/issues"
     },
     "homepage": "https://github.com/daaxar/cache#readme",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/"
+    },
     "license": "MIT"
 }
