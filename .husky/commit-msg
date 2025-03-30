@@ -1,0 +1,6 @@
+#!/bin/sh
+
+. "$HOME/.nvm/nvm.sh"
+nvm use
+
+commitlint --edit $1
