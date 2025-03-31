@@ -63,7 +63,7 @@ jobs:
                   git push origin "${{ steps.versioning.outputs.GIT_VERSION }}"
 
             - name: Publish package
-              run: npm publish --tag ${{ steps.versioning.outputs.NPM_VERSION }}
+              run: npm publish # --tag ${{ steps.versioning.outputs.NPM_VERSION }}
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
