@@ -1,0 +1,55 @@
+name: RELEASE
+
+on:
+    push:
+        branches: [main]
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  registry-url: 'https://npm.pkg.github.com/'
+
+            - name: Auth to GitHub Packages
+              run: echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build
+              run: npm run build --if-present
+
+            - name: Bump version
+              id: versioning
+              run: |
+                  VERSION=$(npm version patch -m "chore: release v%s")
+                  echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+            - name: Push version bump
+              run: |
+                  git config --local user.name "github-actions"
+                  git config --local user.email "github-actions@github.com"
+                  git push
+
+            - name: Publish package
+              run: npm publish --tag latest
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
+            - name: Create GitHub Release
+              uses: actions/create-release@v1
+              with:
+                  tag_name: ${{ steps.versioning.outputs.VERSION }}
+                  release_name: Release ${{ steps.versioning.outputs.VERSION }}
+                  draft: false
+                  prerelease: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
