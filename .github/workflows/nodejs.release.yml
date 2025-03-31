@@ -88,19 +88,29 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  git config --local user.name "github-actions"
-                  git config --local user.email "github-actions@github.com"
+                  # Limpiar cualquier worktree activo
+                  git worktree prune
+                  git fetch --all
 
+                  # Merge a main
                   git checkout main
                   git merge --no-ff "refs/heads/${{ github.ref_name }}"
                   git push origin main
 
+                  # Merge a develop
                   git checkout develop
                   git merge --no-ff "refs/heads/${{ github.ref_name }}"
                   git push origin develop
 
+                  # Volver a la rama release y prepararla para borrado
                   git checkout "${{ github.ref_name }}"
-                  git branch -d "${{ github.ref_name }}"
+
+                  # Forzar limpieza de worktrees y borrar la rama local
+                  git worktree remove --force $(git worktree list | grep "\[${{ github.ref_name }}\]" | awk '{print $1}') 2>/dev/null || true
+                  git branch -D "${{ github.ref_name }}"
+
+                  # Borrar la rama remota
+                  git push origin --delete "${{ github.ref_name }}"
 
             - name: Create GitHub Release with auto-generated notes
               uses: softprops/action-gh-release@v2
