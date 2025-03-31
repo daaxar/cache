@@ -17,7 +17,13 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version-file: '.nvmrc'
+                  cache: 'npm'
                   registry-url: 'https://npm.pkg.github.com/'
+              env:
+                  ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Para depuración, si es necesario
+
+            - name: Check Node version
+              run: node -v
 
             - name: Auth to GitHub Packages
               run: echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
