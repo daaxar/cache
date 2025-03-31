@@ -19,8 +19,8 @@ jobs:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
                   registry-url: 'https://npm.pkg.github.com/'
-              env:
-                  ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Para depuración, si es necesario
+              # env:
+              #     ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Para depuración, si es necesario
 
             - name: Check Node version
               run: node -v
@@ -45,20 +45,25 @@ jobs:
                   # Extraer el nombre de la rama release (ej. release/1.0.0)
                   RELEASE_VERSION=${GITHUB_REF#refs/heads/release/}
                   if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
-                      echo "Error: Release branch name must follow SemVer format (e.g., release/1.0.0)"
+                      echo "Error: Release branch name must follow SemVer format after 'release/' (e.g., release/1.0.0 or release/0.1.3)"
                       exit 1
                   fi
-                  echo "VERSION=v$RELEASE_VERSION" >> $GITHUB_OUTPUT
+                  # Tag de Git (con prefijo v)
+                  GIT_TAG="v$RELEASE_VERSION"
+                  # Tag de npm (sin prefijo v)
+                  NPM_TAG="$RELEASE_VERSION"
+                  echo "GIT_VERSION=$GIT_TAG" >> $GITHUB_OUTPUT
+                  echo "NPM_VERSION=$NPM_TAG" >> $GITHUB_OUTPUT
 
             - name: Create tag and push
               run: |
                   git config --local user.name "github-actions"
                   git config --local user.email "github-actions@github.com"
-                  git tag "${{ steps.versioning.outputs.VERSION }}"
-                  git push origin "${{ steps.versioning.outputs.VERSION }}"
+                  git tag "${{ steps.versioning.outputs.GIT_VERSION }}"
+                  git push origin "${{ steps.versioning.outputs.GIT_VERSION }}"
 
             - name: Publish package
-              run: npm publish --tag ${{ steps.versioning.outputs.VERSION }}
+              run: npm publish --tag ${{ steps.versioning.outputs.NPM_VERSION }}
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
@@ -80,15 +85,15 @@ jobs:
             - name: Create GitHub Release with auto-generated notes
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ steps.versioning.outputs.VERSION }}
-                  name: Release ${{ steps.versioning.outputs.VERSION }}
+                  tag_name: ${{ steps.versioning.outputs.GIT_VERSION }}
+                  name: Release ${{ steps.versioning.outputs.GIT_VERSION }}
                   body: |
                       ## Changes in this release
 
                       - Auto-generated release notes based on commits since last tag.
                       - For detailed changes, see the commits in this repository.
 
-                      ## Merge from release/${{ steps.versioning.outputs.VERSION }}
+                      ## Merge from release/${{ steps.versioning.outputs.NPM_VERSION }}
                   draft: false
                   prerelease: false
               env:
