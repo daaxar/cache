@@ -1,8 +1,8 @@
-name: PR Check & Auto-Merge
+name: PR Check (GitFlow)
 
 on:
     pull_request:
-        branches: [main]
+        branches: [develop]
 
 jobs:
     pr-check:
@@ -24,6 +24,15 @@ jobs:
             - name: Test
               run: npm test
 
+            # - name: Check code coverage
+            #   run: |
+            #       npm run test:coverage
+            #       COVERAGE=$(cat coverage/lcov.info | grep -A 1 "Total" | tail -n 1 | awk '{print $2}' | cut -d'%' -f1)
+            #       if (( $(echo "$COVERAGE < 80" | bc) )); then
+            #           echo "Code coverage ($COVERAGE%) is below minimum threshold (80%)"
+            #           exit 1
+            #       fi
+
     automerge:
         needs: pr-check
         runs-on: ubuntu-latest
@@ -35,3 +44,4 @@ jobs:
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   pull-request-number: ${{ github.event.pull_request.number }}
+                  merge_method: squash
