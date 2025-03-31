@@ -104,6 +104,6 @@ jobs:
               run: npm pack
 
             - name: Publish package
-              run: npm publish --scope daaxar --tag beta
+              run: npm publish --tag beta
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
