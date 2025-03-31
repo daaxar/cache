@@ -1,8 +1,8 @@
-name: PR Check & Auto-Merge
+name: PR Check (GitFlow)
 
 on:
     pull_request:
-        branches: [main]
+        branches: [develop]
 
 jobs:
     pr-check:
@@ -24,7 +24,6 @@ jobs:
             - name: Test
               run: npm test
 
-            # Comentado: Verificar cobertura mínima de código (descomentar y ajustar según tu setup)
             # - name: Check code coverage
             #   run: |
             #       npm run test:coverage
@@ -45,3 +44,4 @@ jobs:
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   pull-request-number: ${{ github.event.pull_request.number }}
+                  merge_method: squash

@@ -1,8 +1,9 @@
-name: RELEASE
+name: RELEASE (GitFlow)
 
 on:
     push:
-        branches: [main]
+        branches:
+            - 'release/*'
 
 jobs:
     release:
@@ -29,35 +30,59 @@ jobs:
             - name: Build
               run: npm run build --if-present
 
+            - name: Test
+              run: npm test
+
             - name: Bump version (patch)
               id: versioning
               run: |
-                  VERSION=$(npm version patch -m "chore: release v%s")
-                  echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+                  # Extraer el nombre de la rama release (ej. release/1.0.0)
+                  RELEASE_VERSION=${GITHUB_REF#refs/heads/release/}
+                  if [[ ! "\$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                      echo "Error: Release branch name must follow SemVer format (e.g., release/1.0.0)"
+                      exit 1
+                  fi
+                  echo "VERSION=v\$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
-            - name: Push version bump
+            - name: Create tag and push
               run: |
                   git config --local user.name "github-actions"
                   git config --local user.email "github-actions@github.com"
-                  git push
+                  git tag "${{ steps.versioning.outputs.VERSION }}"
+                  git push origin "${{ steps.versioning.outputs.VERSION }}"
 
             - name: Publish package
-              run: npm publish --tag latest
+              run: npm publish --tag ${{ steps.versioning.outputs.VERSION }}
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-            - name: Generate release notes
-              id: generate-notes
-              uses: actions/create-release@v1
+            - name: Merge release to main and develop
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  git checkout main
+                  git merge --no-ff "refs/heads/${{ github.ref_name }}"
+                  git push origin main
+
+                  git checkout develop
+                  git merge --no-ff "refs/heads/${{ github.ref_name }}"
+                  git push origin develop
+
+                  git checkout "${{ github.ref_name }}"
+                  git branch -d "${{ github.ref_name }}"
+
+            - name: Create GitHub Release with auto-generated notes
+              uses: softprops/action-gh-release@v2
               with:
                   tag_name: ${{ steps.versioning.outputs.VERSION }}
-                  release_name: Release ${{ steps.versioning.outputs.VERSION }}
+                  name: Release ${{ steps.versioning.outputs.VERSION }}
                   body: |
                       ## Changes in this release
 
                       - Auto-generated release notes based on commits since last tag.
                       - For detailed changes, see the commits in this repository.
 
+                      ## Merge from release/${{ steps.versioning.outputs.VERSION }}
                   draft: false
                   prerelease: false
               env:
