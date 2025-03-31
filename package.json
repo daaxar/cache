@@ -17,7 +17,8 @@
     "scripts": {
         "lint": "prettier . --ignore-unknown",
         "lint:write": "npm run lint -- --write",
-        "test": "echo \"Warn: test are skipped\" && exit 0",
+        "test": "jest",
+        "test:coverage": "jest --coverage",
         "nvm": "nvm use",
         "prepare": "husky"
     },
