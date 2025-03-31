@@ -14,7 +14,7 @@ const Cache = ({
 
     return (
         fn,
-        { prefix = prefixDefault, expiresAt: instanceExpiresAt } = {}
+        { prefix = prefixDefault, expiresAt: instanceExpiresAt } = {},
     ) => {
         const factoryOptions = { expiresAt, getCacheKey, throwOnError };
         const instanceOptions = { prefix, expiresAt: instanceExpiresAt };

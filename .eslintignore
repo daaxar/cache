@@ -1,9 +1,0 @@
-__mocks__/
-__tests__/
-_ignore_
-_ignore_*.*
-.prettierrc.json
-.vscode/settings.json
-dist/
-package.json
-package-lock.json

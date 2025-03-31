@@ -17,10 +17,18 @@
         ".dockerignore": true,
         ".gitignore": true,
         ".eslintignore": true,
+        ".npmignore": true,
+        ".nvmrc": true,
+        "commitlint.config.*": true,
         "coverage": true,
         "node_modules": true,
         "dist": true,
-        "package-lock.json": true
+        "package-lock.json": true,
+        "LICENSE": true,
+        "README.*md": true,
+        "CONTRIBUTING.md": true,
+        "GITFLOW.md": true,
+        "docs": true
     },
     "files.watcherExclude": {
         "**/.git/objects/**": true,

@@ -23,7 +23,7 @@ function getCacheKeyDefault(fn, args) {
             //     .slice(-32)
             //     .join("")
             // )
-            .join('_')
+            .join('_'),
     );
 }
 

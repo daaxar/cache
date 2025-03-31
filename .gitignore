@@ -105,3 +105,5 @@ dist
 
 _ignore_*
 .ignore_*
+
+.cache

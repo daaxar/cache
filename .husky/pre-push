@@ -3,4 +3,4 @@
 . "$HOME/.nvm/nvm.sh"
 nvm use
 
-lint-staged
+npm test
