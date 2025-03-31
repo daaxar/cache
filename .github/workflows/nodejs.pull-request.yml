@@ -24,6 +24,16 @@ jobs:
             - name: Test
               run: npm test
 
+            # Comentado: Verificar cobertura mínima de código (descomentar y ajustar según tu setup)
+            # - name: Check code coverage
+            #   run: |
+            #       npm run test:coverage
+            #       COVERAGE=$(cat coverage/lcov.info | grep -A 1 "Total" | tail -n 1 | awk '{print $2}' | cut -d'%' -f1)
+            #       if (( $(echo "$COVERAGE < 80" | bc) )); then
+            #           echo "Code coverage ($COVERAGE%) is below minimum threshold (80%)"
+            #           exit 1
+            #       fi
+
     automerge:
         needs: pr-check
         runs-on: ubuntu-latest

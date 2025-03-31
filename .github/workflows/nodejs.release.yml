@@ -9,6 +9,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -27,7 +29,7 @@ jobs:
             - name: Build
               run: npm run build --if-present
 
-            - name: Bump version
+            - name: Bump version (patch)
               id: versioning
               run: |
                   VERSION=$(npm version patch -m "chore: release v%s")
@@ -44,11 +46,18 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-            - name: Create GitHub Release
+            - name: Generate release notes
+              id: generate-notes
               uses: actions/create-release@v1
               with:
                   tag_name: ${{ steps.versioning.outputs.VERSION }}
                   release_name: Release ${{ steps.versioning.outputs.VERSION }}
+                  body: |
+                      ## Changes in this release
+
+                      - Auto-generated release notes based on commits since last tag.
+                      - For detailed changes, see the commits in this repository.
+
                   draft: false
                   prerelease: false
               env:
