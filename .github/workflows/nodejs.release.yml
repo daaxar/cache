@@ -70,7 +70,7 @@ jobs:
                   NEW_VERSION=$(node -p "require('./package.json').version")
                   echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-            - name: Push version bump and tag
+            - name: Push version bump and tag to release branch
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
@@ -84,33 +84,30 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-            - name: Merge release to main and develop
+            - name: Merge release to main
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  # Limpiar cualquier worktree activo
-                  git worktree prune
-                  git fetch --all
-
-                  # Merge a main
                   git checkout main
                   git merge --no-ff "refs/heads/${{ github.ref_name }}"
                   git push origin main
 
-                  # Merge a develop
+            - name: Merge main to develop
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
                   git checkout develop
-                  git merge --no-ff "refs/heads/${{ github.ref_name }}"
+                  git merge --no-ff main
                   git push origin develop
 
-                  # Volver a la rama release y prepararla para borrado
-                  git checkout "${{ github.ref_name }}"
-
-                  # Forzar limpieza de worktrees y borrar la rama local
-                  git worktree remove --force $(git worktree list | grep "\[${{ github.ref_name }}\]" | awk '{print $1}') 2>/dev/null || true
-                  git branch -D "${{ github.ref_name }}"
-
-                  # Borrar la rama remota
-                  git push origin --delete "${{ github.ref_name }}"
+            - name: Verify tag on main
+              run: |
+                  git checkout main
+                  if ! git rev-parse "v${{ steps.versioning.outputs.VERSION }}" >/dev/null 2>&1; then
+                      echo "Error: Tag v${{ steps.versioning.outputs.VERSION }} not found on main"
+                      exit 1
+                  fi
+                  echo "Tag v${{ steps.versioning.outputs.VERSION }} confirmed on main"
 
             - name: Create GitHub Release with auto-generated notes
               uses: softprops/action-gh-release@v2
