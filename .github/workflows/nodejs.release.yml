@@ -19,8 +19,6 @@ jobs:
                   node-version-file: '.nvmrc'
                   cache: 'npm'
                   registry-url: 'https://npm.pkg.github.com/'
-              env:
-                  ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Para depuración, si es necesario
 
             - name: Check Node version
               run: node -v
@@ -39,26 +37,50 @@ jobs:
             - name: Test
               run: npm test
 
-            - name: Bump version (patch)
+            - name: Set version from branch name
               id: versioning
-              run: |
-                  # Extraer el nombre de la rama release (ej. release/1.0.0)
-                  RELEASE_VERSION=${GITHUB_REF#refs/heads/release/}
-                  if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
-                      echo "Error: Release branch name must follow SemVer format (e.g., release/1.0.0)"
-                      exit 1
-                  fi
-                  echo "VERSION=v$RELEASE_VERSION" >> $GITHUB_OUTPUT
-
-            - name: Create tag and push
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   git config --local user.name "github-actions"
                   git config --local user.email "github-actions@github.com"
-                  git tag "${{ steps.versioning.outputs.VERSION }}"
-                  git push origin "${{ steps.versioning.outputs.VERSION }}"
+
+                  # Extraer el nombre de la rama release (ej. release/1.0.0 o release/1.0.0-beta)
+                  RELEASE_VERSION=${GITHUB_REF#refs/heads/release/}
+                  if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+(\.[0-9]+)*([-][a-zA-Z0-9]+)?$ ]]; then
+                      echo "Error: Release branch name must follow SemVer format after 'release/' (e.g., release/1.0.0 or release/1.0.0-beta)"
+                      exit 1
+                  fi
+
+                  # Preparar el argumento para npm version
+                  if [[ "$RELEASE_VERSION" == *"-"* ]]; then
+                      # Si contiene sufijo (ej. -beta), usar prerelease
+                      VERSION_TYPE="prerelease"
+                      NPM_VERSION="$RELEASE_VERSION"
+                  else
+                      # Si no hay sufijo, usar exact
+                      VERSION_TYPE="exact"
+                      NPM_VERSION="$RELEASE_VERSION"
+                  fi
+
+                  # Actualizar versión en package.json usando npm version
+                  npm version "$NPM_VERSION" -m "chore(release): set version to %s"
+
+                  # Obtener la versión actualizada
+                  NEW_VERSION=$(node -p "require('./package.json').version")
+                  echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+            - name: Push version bump and tag
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  git config --local user.name "github-actions"
+                  git config --local user.email "github-actions@github.com"
+                  git push
+                  git push --tags
 
             - name: Publish package
-              run: npm publish --tag ${{ steps.versioning.outputs.VERSION }}
+              run: npm publish
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
@@ -66,6 +88,9 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
+                  git config --local user.name "github-actions"
+                  git config --local user.email "github-actions@github.com"
+
                   git checkout main
                   git merge --no-ff "refs/heads/${{ github.ref_name }}"
                   git push origin main
@@ -80,8 +105,8 @@ jobs:
             - name: Create GitHub Release with auto-generated notes
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ steps.versioning.outputs.VERSION }}
-                  name: Release ${{ steps.versioning.outputs.VERSION }}
+                  tag_name: v${{ steps.versioning.outputs.VERSION }}
+                  name: Release v${{ steps.versioning.outputs.VERSION }}
                   body: |
                       ## Changes in this release
 
