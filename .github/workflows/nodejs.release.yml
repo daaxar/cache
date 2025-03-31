@@ -38,11 +38,11 @@ jobs:
               run: |
                   # Extraer el nombre de la rama release (ej. release/1.0.0)
                   RELEASE_VERSION=${GITHUB_REF#refs/heads/release/}
-                  if [[ ! "\$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                  if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
                       echo "Error: Release branch name must follow SemVer format (e.g., release/1.0.0)"
                       exit 1
                   fi
-                  echo "VERSION=v\$RELEASE_VERSION" >> $GITHUB_OUTPUT
+                  echo "VERSION=v$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
             - name: Create tag and push
               run: |
