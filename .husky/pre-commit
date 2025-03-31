@@ -1,6 +1,6 @@
 #!/bin/sh
 
 . "$HOME/.nvm/nvm.sh"
-nvm use
+nvm install && nvm use
 
 lint-staged

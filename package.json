@@ -1,6 +1,6 @@
 {
     "name": "@daaxar/cache",
-    "version": "0.1.2",
+    "version": "0.1.6-beta",
     "description": "Yet another decorator cache function",
     "main": "src/index.js",
     "files": [
