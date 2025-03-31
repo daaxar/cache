@@ -82,7 +82,8 @@ jobs:
         name: Publish package
 
         steps:
-            - uses: actions/checkout@v4
+            - name: Checkout code
+              uses: actions/checkout@v4
 
             - name: Install Node.js via nvm using .nvmrc
               shell: bash --login {0}
@@ -97,8 +98,27 @@ jobs:
                   git fetch origin develop --unshallow || true
                   git pull origin develop
 
+            - name: Set up .npmrc
+              run: echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
+            - name: Verify npm auth
+              run: |
+                  echo "Contents of .npmrc:"
+                  cat ~/.npmrc
+                  echo ""
+                  echo "Running 'npm whoami' to verify authentication..."
+                  npm whoami || echo "❌ npm is not authenticated"
+
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
             - name: Install dependencies
               run: npm ci
+
+            - name: Build
+              run: npm run build --if-present
 
             - name: Create pack
               run: npm pack
