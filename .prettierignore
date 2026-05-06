@@ -1,6 +1,9 @@
 package-lock.json
 node_modules
 coverage
+.agents
+.vscode
+AGENTS.md
 
 # Ignore artifacts:
 build

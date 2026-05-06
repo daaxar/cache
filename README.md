@@ -11,10 +11,13 @@
 ## ✨ Features
 
 - ✅ Supports both synchronous and asynchronous functions
+- ✅ Supports non-`async` functions that return `Promise`
+- ✅ Single-flight: concurrent calls for the same key share one execution
 - ⚡ Minimal, efficient, and non-intrusive
 - 🗃️ Built-in support for filesystem and memory-based storage
 - ⏱️ Customizable cache expiration
 - 🧱 Decorator support for both functions and entire objects
+- 🧹 Manual invalidation by key, function, or namespace
 - 🎯 Well-defined code style (Prettier, commitlint, husky)
 
 ---
@@ -60,11 +63,14 @@ const cachedFn = cache(slowFn, { prefix: 'slow' });
 
 ```js
 Cache({
-    repository, // 'memory' or 'filesystem' (default: filesystem)
-    prefix, // Key prefix
-    expiresAt, // Cache expiration time in seconds
-    throwOnError, // Whether to throw if caching fails
-    getCacheKey, // Custom function to generate a cache key
+    repository, // repositories.filesystem() by default
+    namespace, // preferred cache namespace
+    prefix, // backwards-compatible alias for namespace
+    expiresAt, // TTL in seconds, defaults to 30
+    throwOnError, // legacy shortcut for cacheErrorStrategy: 'throw'
+    cacheErrorStrategy, // 'bypass' (default) or 'throw'
+    getCacheKey, // custom function key generator
+    keySerializer, // custom serializer for key input
 });
 ```
 
@@ -72,10 +78,12 @@ You can also pass options per function instance:
 
 ```js
 const cached = cache(fn, {
-    prefix: 'my-function',
+    namespace: 'my-function',
     expiresAt: 60,
 });
 ```
+
+`prefix` still works, but new code should use `namespace`. A namespace isolates storage and is also used by `clear`.
 
 ---
 
@@ -90,6 +98,106 @@ const { repositories } = require('@daaxar/cache');
 const memoryRepo = repositories.memory();
 const cache = Cache({ repository: memoryRepo });
 ```
+
+Filesystem cache defaults to `path.join(process.cwd(), '.daaxar-cache')`, not the package directory. Pass `repositories.filesystem({ folder })` to choose an explicit location.
+
+```js
+const cache = Cache({
+    repository: repositories.filesystem({
+        folder: './.cache/my-app',
+    }),
+});
+```
+
+### Manual invalidation
+
+```js
+const cache = Cache({
+    repository: repositories.memory(),
+    getCacheKey: (_fn, args) => args[0],
+});
+
+const cachedUser = cache(loadUser, { namespace: 'users' });
+
+await cachedUser.cache.deleteKey('user-123');
+await cachedUser.cache.deleteFunction();
+await cache.clear({ namespace: 'users' });
+```
+
+### Object methods
+
+Objects are not mutated by default. The returned object contains wrapped methods and preserves `this`.
+
+```js
+const service = {
+    factor: 2,
+    multiply(value) {
+        return value * this.factor;
+    },
+};
+
+const cachedService = cache(service, { namespace: 'service' });
+cachedService.multiply(4);
+```
+
+If you intentionally want mutation:
+
+```js
+cache(service, { namespace: 'service', mutate: true });
+```
+
+### Repository contract
+
+Repositories expose this async contract:
+
+```js
+{
+    read(key, options);
+    write(key, content, args, options);
+    delete (key, options);
+    has(key, options);
+    clear(options);
+}
+```
+
+Built-in repositories also expose sync variants for sync function caching: `readSync`, `writeSync`, `deleteSync`, `hasSync`, and `clearSync`. If a custom repository does not expose sync methods, sync functions execute without persistence.
+
+### Serializers and key limits
+
+Default key generation uses stable JSON-like serialization and rejects circular arguments. It handles `undefined`, `Date`, `BigInt`, `Function`, and `Symbol` with explicit markers, but cache keys are only as good as the values you pass in. For non-serializable or domain-specific arguments, provide `getCacheKey` or `keySerializer`.
+
+Filesystem output uses JSON by default and can be customized:
+
+```js
+const repository = repositories.filesystem({
+    serializer: {
+        serialize: (entry) => JSON.stringify(entry),
+        deserialize: (text) => JSON.parse(text),
+    },
+});
+```
+
+### Error behavior
+
+By default cache repository failures are bypassed: the wrapped function still executes and the cache read/write failure is ignored. Use `cacheErrorStrategy: 'throw'` or `throwOnError: true` when cache failures should fail the call.
+
+### Module compatibility
+
+The package is CommonJS-first:
+
+```js
+const { Cache, repositories } = require('@daaxar/cache');
+```
+
+Type declarations are included for TypeScript consumers. ESM projects can import it through Node's CommonJS interop.
+
+### Known limits
+
+- Cached arguments and filesystem values must be serializable by the configured serializers.
+- Promise results are cached after resolution; rejected promises are not cached.
+- Single-flight is in-process only. It does not coordinate across Node processes.
+- Filesystem storage is local disk storage, not a distributed cache.
+- Default TTL is 30 seconds. Use an explicit `expiresAt` for production behavior.
 
 ---
 
@@ -106,7 +214,9 @@ This project uses:
 ```bash
 npm run lint        # Analyze code formatting
 npm run lint:write  # Auto-fix formatting
-npm test            # Run tests (currently a placeholder)
+npm test            # Run Jest tests
+npm run build       # Check JavaScript syntax
+npm run clean       # Remove generated local artifacts
 ```
 
 ---
