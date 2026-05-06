@@ -3,9 +3,11 @@
     "version": "0.1.8",
     "description": "Yet another decorator cache function",
     "main": "src/index.js",
+    "types": "types/index.d.ts",
     "files": [
         "dist",
         "src",
+        "types/index.d.ts",
         "LICENSE",
         "README.md",
         "package.json"
@@ -15,9 +17,10 @@
         "npm": "10.9.2"
     },
     "scripts": {
-        "lint": "prettier . --ignore-unknown",
-        "lint:write": "npm run lint -- --write",
-        "test": "echo \"Warn: test are skipped\" && exit 0",
+        "clean": "rimraf coverage .daaxar-cache",
+        "lint": "prettier . --check --ignore-unknown",
+        "lint:write": "prettier . --write --ignore-unknown",
+        "test": "jest --runInBand",
         "nvm": "nvm use",
         "prepare": "husky"
     },

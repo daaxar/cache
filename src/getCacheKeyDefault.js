@@ -1,29 +1,48 @@
 const { hash } = require('./utils/hash');
+const { stableStringify } = require('./utils/stableStringify');
 
-const uniqueFN = new Set();
+const functionKeys = new WeakMap();
 
-function getCacheKeyDefault(fn, args) {
-    const fnKey =
-        uniqueFN[fn] ||
-        ((f) => {
-            uniqueFN[f] = f.toString();
-            return uniqueFN[f];
-        })(fn);
+function getFunctionSignature(fn) {
+    if (!functionKeys.has(fn)) {
+        functionKeys.set(fn, {
+            name: fn.name || 'anonymous',
+            sourceHash: hash(fn.toString()),
+        });
+    }
+
+    return functionKeys.get(fn);
+}
+
+function serializeArgs(args, serializer = stableStringify) {
+    try {
+        return serializer(args);
+    } catch (error) {
+        throw new TypeError(
+            `Unable to generate cache key: ${error.message || 'arguments are not serializable'}`,
+        );
+    }
+}
+
+function getCacheKeyDefault(fn, args, { namespace = '', serializer } = {}) {
+    const serializedArgs = serializeArgs(args, serializer);
+
+    if (typeof fn !== 'function') {
+        return hash(
+            stableStringify({
+                namespace,
+                fn: String(fn),
+                args: serializedArgs,
+            }),
+        );
+    }
 
     return hash(
-        [fnKey, ...args]
-            .map((p) => JSON.stringify(p))
-            .map((str) => str)
-            .map(hash)
-            // .map(String)
-            // .map((str) =>
-            //   str
-            //     .split("")
-            //     .map((c) => c.charCodeAt(0).toString(16))
-            //     .slice(-32)
-            //     .join("")
-            // )
-            .join('_'),
+        stableStringify({
+            namespace,
+            fn: getFunctionSignature(fn),
+            args: serializedArgs,
+        }),
     );
 }
 
